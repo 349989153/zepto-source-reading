@@ -6,6 +6,7 @@
 // `$.zepto.qsa` is Zepto's CSS selector implementation which
 // uses `document.querySelectorAll` and optimizes for some special cases, like `#id`.
 // This method can be overridden in plugins.
+var simpleSelectorRE = /^[\w-]*$/;
 zepto.qsa = function (element, selector) {
   var found,
     maybeID = selector[0] == '#',
@@ -23,6 +24,10 @@ zepto.qsa = function (element, selector) {
       )
 }
 ```
+变量maybeID用来检查selector是否符合css的id选择器写法。
+变量maybeClass用来检查selector是否符合css的class选择器写法。
+变量nameOnly截取idName或者className的部分。
+变量isSimple用来测试nameOnly是否是简单选择器（它测试nameOnly是否只包含数字字母下划线短横线，如果selector的写法是属性选择器之类的，就通不过这个正则）。
 ## Zepto.matches
 ```javascript
 zepto.matches = function(element, selector) {
