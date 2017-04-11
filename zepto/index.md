@@ -197,6 +197,56 @@ zepto.Z = function(dom, selector) {
 
 **把数组原型改成`$.fn`是怎么做到的？这么做有什么用呢？因为`zepto.Z`返回的是Z的对象，而不是dom参数，dom参数已经没用了呀**
 
+## $.fn.find
+```javascript
+find: function (selector) {
+  var result, $this = this// $this指向调用find方法的Z对象集,比如$(context).find(div1); $this指向context
+  if (!selector) result = $()
+  else if (typeof selector == 'object')
+    result = $(selector).filter(function () {
+      var node = this
+      return emptyArray.some.call($this, function (parent) {
+        return $.contains(parent, node)
+      })
+    })
+  else if (this.length == 1) result = $(zepto.qsa(this[0], selector))
+  else result = this.map(function () {
+      return zepto.qsa(this, selector)
+    })
+  return result
+}
+```
+这里就是find的源码。首先，如果没有selector，返回一个空的Z对象集:
+```javascript
+if (!selector) result = $()
+```
+为了理解接下来这段代码，我们定义一个调用场景：`$(context).find(selector)`。
+
+接着如果`selector`如果`object`类型，注意是`object`而不是Dom node，也就是`selector`有可能是`Z对象集`。
+
+接下来这段代码的意思是，以调用场景为例，对于`$(context)`可能有若干个元素，而`selector`可能有若干个元素，`result`会是`selector`的一个子集，子集中的元素都是`context`某个元素的子元素，
+不是某个元素的子元素将会被排除在外：
+```javascript
+else if (typeof selector == 'object')
+    result = $(selector).filter(function () {// 对于selector进行filter处理,过滤符合条件的元素
+      var node = this// this指向selector元素集中的某元素
+      return emptyArray.some.call($this, function (parent) {// 如果context有某个元素，包含了node，返回true
+        return $.contains(parent, node)
+      })
+    })
+```
+然后，如果`context`中只有一个元素，调用`zepto.qsa`直接获取`context`的子元素
+```javascript
+else if (this.length == 1) result = $(zepto.qsa(this[0], selector))
+```
+最后，`selector`既不是`object`，`context`也不只一个元素的，对每个`context`元素都调用`zepto.qsa`，获取子元素:
+```javascript
+else result = this.map(function () {
+  return zepto.qsa(this, selector)
+})
+```
+
+
 ## Zepto.matches
 ```javascript
 zepto.matches = function(element, selector) {
