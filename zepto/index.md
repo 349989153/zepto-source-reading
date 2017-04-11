@@ -107,7 +107,11 @@ zepto.init = function (selector, context) {
 ```
 `zepto.init`接收两个参数：`selector`一般当作选择器，和`context`，调用选择器的上下文。`context`的理解一般是作为root的节点。
 
-首先，如果没传`selector`，那么通过`zepto.Z()`返回一个空的zepto类。然后，如果`selector`是一个字符串的话，检查这个字符串是不是`html`片段。这里`fragmentRE = /^\s*<(\w+|!)[^>]*>/`
+首先，如果没传`selector`，那么通过`zepto.Z()`返回一个空的zepto类。
+```javascript
+if (!selector) return zepto.Z()
+```
+然后，如果`selector`是一个字符串的话，检查这个字符串是不是`html`片段。这里`fragmentRE = /^\s*<(\w+|!)[^>]*>/`
 这个正则需要理解一下:
 ```javascript
 /**
@@ -121,16 +125,47 @@ zepto.init = function (selector, context) {
 var fragmentRE = /^\s*<(\w+|!)[^>]*>/
 ```
 如果是`html`片段，则调用`zepto.fragment`创建一个节点，并且把`selector`置为`null`。
+```javascript
+if (selector[0] == '<' && fragmentRE.test(selector))
+  dom = zepto.fragment(selector, RegExp.$1, context), selector = null
+```
 
 接着如果`selector`是`string`而且传入了`context`，调用`$(context).find(selector)`去`context`下找`selector`，如果没有传`context`，则在`document`下调用`zepto.qsa`。
+```javascript
+else if (context !== undefined) return $(context).find(selector)
+    // If it's a CSS selector, use it to select nodes.
+else dom = zepto.qsa(document, selector)
+```
 **这里有一个问题：为什么传了`context`调用的是`find`方法，而对`document`则是用`zepto.qsa`，难道不可以`$(document).find(selector)`吗**
 
 接着，如果`selector`不是`string`而是`function`，那么在文档ready的时候调用这个`function`。
-
+```javascript
+else if (isFunction(selector)) return $(document).ready(selector)
+```
 如果`selector`是一个Zepto的对象集，那么直接返回它。比如`var zObj = $("#myDiv");console.log(zObj == $(zObj));// true`
+```javascript
+else if (zepto.isZ(selector)) return selector
+```
 
 如果`selector`既不是对象集也不是`string`也不是`function`: 如果是类数组，那么`dom`变量存一个数组，被`compact`处理过之后，里面的元素都不为null；如果是一个`Object`，那么dom变量存一个数组，把
 selector存进去；如果是一个`new String()`创建的selector，那么测试字符串是否符合html片段；再往后面的就和前面一样了。最后，使用`zepto.Z()`创建一个zepto对象集并返回。
+```javascript
+else {  
+  // normalize array if an array of nodes is given
+  if (isArray(selector)) dom = compact(selector)
+  // Wrap DOM nodes.
+  else if (isObject(selector))
+    dom = [selector], selector = null
+  // If it's a html fragment, create nodes from it
+  else if (fragmentRE.test(selector))
+    dom = zepto.fragment(selector.trim(), RegExp.$1, context), selector = null
+  // If there's a context, create a collection on that context first, and select
+  // nodes from there
+  else if (context !== undefined) return $(context).find(selector)
+  // And last but no least, if it's a CSS selector, use it to select nodes.
+  else dom = zepto.qsa(document, selector)
+}
+```
 ## Zepto.matches
 ```javascript
 zepto.matches = function(element, selector) {
