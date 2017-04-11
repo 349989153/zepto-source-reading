@@ -166,6 +166,37 @@ else {
   else dom = zepto.qsa(document, selector)
 }
 ```
+## Zepto.Z
+```javascript
+function Z(dom, selector) {
+  var i, len = dom ? dom.length : 0
+  for (i = 0; i < len; i++) this[i] = dom[i]
+  this.length = len
+  this.selector = selector || ''
+}
+// `$.zepto.Z` swaps out the prototype of the given `dom` array
+// of nodes with `$.fn` and thus supplying all the Zepto functions
+// to the array. This method can be overridden in plugins.
+zepto.Z = function(dom, selector) {
+  return new Z(dom, selector)
+}
+```
+`zepto.Z`这段代码也挺好理解的，首先定义一个`Z类型`，以便创建它的实例，`Z类型`接收两个参数：`dom`是一个数组，里面存放着原生的html元素；`selector`是选择器，在这里只有记录作用。
+
+`Z类型`的实例化对象有这么几个属性：0-N是数字，放着`dom参数`对应的`html元素`，`length`放着`dom`参数的`length`，`selector`放着传入的参数。
+
+然后`zepto.Z`方法则是返回一个新的`Z类型`实例。
+
+东西都很简单，但是注释引起了我的注意：
+```javascript
+// `$.zepto.Z` swaps out the prototype of the given `dom` array
+// of nodes with `$.fn` and thus supplying all the Zepto functions
+// to the array. This method can be overridden in plugins.
+```
+说的是`$.zepto.Z`把`dom`数组的原型改成了`$.fn`，因此数组可以调用所有的`zepto`方法。
+
+**把数组原型改成`$.fn`是怎么做到的？这么做有什么用呢？因为`zepto.Z`返回的是Z的对象，而不是dom参数，dom参数已经没用了呀**
+
 ## Zepto.matches
 ```javascript
 zepto.matches = function(element, selector) {
