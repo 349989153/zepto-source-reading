@@ -59,6 +59,9 @@ $.fn = {
 ；如果需要实现多阶链如：`$("myDiv").text("hello").show()`，就要求自定义在`Z类`的`prototype`上的方法，每个都需要返回一个新的`Z类`型。本来，这些方法直接定义在`Z类`的`prototype`上就好，但是考虑到可扩展
 性，`zepto.js`先把它们定义在`$.fn`这个`{}`里，然后再让`Z.prototype`指向`$.fn`，这样，随着`$`被return，`$.fn`也会暴露出来，如果你对`$.fn`进行修改，就能对`zepto.js`所定义的方法进行增删改，极大地加强了可扩展性。
 ```javascript
+zepto.Z = function(dom, selector) {
+  return new Z(dom, selector)
+}
 zepto.Z.prototype = Z.prototype = $.fn
 ```
 
