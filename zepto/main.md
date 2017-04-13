@@ -130,4 +130,28 @@ window.$ === undefined && (window.$ = Zepto)
 
 zepto是声明一个全局变量Zepto，它的值是匿名函数的返回值，在匿名函数的函数体内，声明并返回了$函数，可以说，zepto的主体是写在匿名函数里的。
 
-而jquery没有声明全局变量，它的匿名函数也只是执行
+而jquery没有声明全局变量，它的匿名函数也只是执行一句`factory( global );`而已，真正的函数体是匿名函数的第二个参数。
+
+然后是jQuery函数表达式：
+```javascript
+jQuery = function (selector, context) {
+
+  // The jQuery object is actually just the init constructor 'enhanced'
+  // Need init if jQuery is called (just allow error to be thrown if not included)
+  return new jQuery.fn.init(selector, context);
+}
+// 省略
+return jQuery;
+```
+这里和zepto.js是有一点点小区别的，zepto.js生成Z对象是依靠调用zepto.Z，所以$.fn会挂载到Z.prototype上面：
+```javascript
+zepto.Z = function(dom, selector) {
+  return new Z(dom, selector)
+}
+```
+而jQuery则比较简单粗暴，直接把jQuery.fn.init当作构造函数，所以jQuery.fn会挂载到jQuery.fn.init.prototype上面：
+```javascript
+init = jQuery.fn.init = function( selector, context, root ){...}
+init.prototype = jQuery.fn;
+```
+其他方面基本和zepto.js一样，把jQuery弄成一个函数，这样就能够实现$("myDiv")的调用；并且在jQuery函数上定义各种属性，这样就能够实现如$.each()的调用。
