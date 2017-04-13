@@ -64,6 +64,45 @@ zepto.Z = function(dom, selector) {
 }
 zepto.Z.prototype = Z.prototype = $.fn
 ```
+**在这里，我实在无法理解`zepto.Z.prototype = $.fn`这句话的含义，照理说，`Z.prototype = $.fn`已经够用了，`zepto.Z`不过是一个函数，而`Z`才是类，为何要把`zepto.Z.prototype`也设为`$.fn`?**
+于是我把源码改成：
+```javascript
+// zepto.Z.prototype = Z.prototype = $.fn
+Z.prototype = $.fn
+```
+结果zepto.js自带的测试跑不通，测试似乎进入了死循环，一直出不来结果。
+
+于是我开始重新审视我的那句话：**`zepto.Z`不过是一个函数，而`Z`才是类。**在js里，其实本没有类的构造函数，只有函数，用过`new`之后，也就成了类的构造函数。**所以，会不会是在哪儿用了类似`new zepto.Z()`的写法了？**
+于是我到源码中搜索，果不其然：
+```javascript
+zepto.isZ = function(object) {
+  return object instanceof zepto.Z
+}
+$.fn = {
+  constructor: zepto.Z,
+  length: 0
+  ....
+  ....
+}
+```
+然后我改成：
+```javascript
+zepto.isZ = function(object) {
+  //return object instanceof zepto.Z
+  return object instanceof Z
+}
+$.fn = {
+  // constructor: zepto.Z,
+  constructor: Z,
+  length: 0
+  ....
+  ....
+}
+// zepto.Z.prototype = Z.prototype = $.fn
+Z.prototype = $.fn
+```
+并且跑了测试，这回测试跑通。。。。好吧，所以为啥在这两个地方要用zepto.Z而不是Z，又成了一个问题，难道只是作者个人喜好而已？
+
 
 并且可以看到，随着`$.zepto = zepto`,在`zepto`这个`{}`上定义的方法，也随之暴露了出来。所以这里也可以看到闭包的有用之处：闭包之内都可以理解为私有变量，而这些私有变量如果需要暴露出来，依附着`return`
 的共有变量，就可以实现。
@@ -75,4 +114,19 @@ $.zepto = zepto
 window.Zepto = Zepto
 window.$ === undefined && (window.$ = Zepto)
 ```
+## jQuery的基础架构（版本1.12.5-pre）
+和zepto相同，我们也把jquery的主要结构提炼出来：
+```javascript
+(function( global, factory ) {
 
+  factory( global );
+
+}(typeof window !== "undefined" ? window : this, function( window, noGlobal ) {
+	  
+}));
+```
+首先看到最简的形式，jquery就和zepto不一样。
+
+zepto是声明一个全局变量Zepto，它的值是匿名函数的返回值，在匿名函数的函数体内，声明并返回了$函数，可以说，zepto的主体是写在匿名函数里的。
+
+而jquery没有声明全局变量，它的匿名函数也只是执行
